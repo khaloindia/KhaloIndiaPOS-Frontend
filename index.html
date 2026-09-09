@@ -19,47 +19,49 @@
 <body>
 
     <div class="header">
-        KHALO INDIA
+        Khalo India
     </div>
 
     <div class="menu-container">
-        <!-- Item 1 -->
         <div class="menu-item">
             <div class="item-details">
                 <h3>Special Chicken Biryani</h3>
                 <p>Authentic dum biryani with raita</p>
-                <span class="price">₹199</span>
+                <span class="price">Rs. 199</span>
             </div>
-            <button class="add-btn" onclick="addToCart()">Add</button>
+            <!-- এখানে 199 পাস করা হচ্ছে -->
+            <button class="add-btn" onclick="addToCart(199)">Add</button>
         </div>
 
-        <!-- Item 2 -->
         <div class="menu-item">
             <div class="item-details">
                 <h3>Desi Cold Coffee</h3>
                 <p>Thick cold coffee with chocolate drops</p>
-                <span class="price">₹89</span>
+                <span class="price">Rs. 89</span>
             </div>
-            <button class="add-btn" onclick="addToCart()">Add</button>
+            <!-- এখানে 89 পাস করা হচ্ছে -->
+            <button class="add-btn" onclick="addToCart(89)">Add</button>
         </div>
     </div>
 
     <div class="cart-footer" id="cartFooter">
-        <span id="cartText">1 Item Added</span> | 
+        <span id="cartText">0 Item Added</span> | 
         <button style="background:#ff5722; color:white; border:none; padding:5px 10px; border-radius:3px;" onclick="placeOrder()">Place Order</button>
     </div>
 
     <script>
-                let cartCount = 0;
+        let cartCount = 0;
+        let cartTotal = 0; // মোট দাম ট্র্যাক করার জন্য নতুন ভেরিয়েবল
         
-        function addToCart() {
+        function addToCart(price) {
             cartCount++;
+            cartTotal = cartTotal + price; // প্রতি ক্লিকে আসল দাম যোগ হবে
+            
             document.getElementById('cartFooter').style.display = 'block';
-            document.getElementById('cartText').innerText = cartCount + " Item(s) Added";
+            document.getElementById('cartText').innerText = cartCount + " Item(s) | Rs. " + cartTotal;
         }
 
         async function placeOrder() {
-            // নিচে আপনার Render-এর লাইভ লিংকটা বসাবেন
             const backendUrl = "https://khaloindiapos-backend-1.onrender.com/place-order"; 
             
             try {
@@ -69,22 +71,22 @@
                     body: JSON.stringify({ 
                         table: "Table 1", 
                         items: cartCount,
-                        total_amount: cartCount * 199 
+                        total_amount: cartTotal // এখানে এখন সঠিক দামটা সার্ভারে যাবে
                     })
                 });
                 
                 let result = await response.json();
                 alert("Order sent to Kitchen successfully!");
                 
+                // অর্ডার করার পর কার্ট জিরো করে দেওয়া হলো
                 cartCount = 0;
+                cartTotal = 0;
                 document.getElementById('cartFooter').style.display = 'none';
             } catch (error) {
                 alert("Error connecting to server! Check connection.");
             }
         }
-        
     </script>
 
 </body>
 </html>
-
