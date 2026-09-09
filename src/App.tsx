@@ -1,24 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import RestaurantPanel from './pages/RestaurantPanel';
 
-// আপাতত পেজগুলোর স্ট্রাকচার বানাচ্ছি, পরে আলাদা ফোল্ডারে সরাব
 const LandingPage = () => (
-  <div style={{ textAlign: 'center', marginTop: '50px' }}>
-    <h2>Khalo India Main Website</h2>
-    <p>This will be designed later.</p>
-  </div>
-);
-
-const RestaurantLogin = () => (
-  <div style={{ textAlign: 'center', marginTop: '50px' }}>
-    <h2>Restaurant Login Panel</h2>
-    <p>Admin login interface goes here.</p>
-  </div>
-);
-
-const CashierDashboard = () => (
-  <div style={{ textAlign: 'center', marginTop: '50px' }}>
-    <h2>Live Cashier Dashboard</h2>
-    <p>WebSockets will be connected here.</p>
+  <div style={{ textAlign: 'center', marginTop: '100px', fontFamily: 'Segoe UI' }}>
+    <h1 style={{ color: '#ff5722' }}>Khalo India POS</h1>
+    <p>Smart Restaurant Management System</p>
   </div>
 );
 
@@ -27,8 +13,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/restaurant" element={<RestaurantLogin />} />
-        <Route path="/cashier" element={<CashierDashboard />} />
+        <Route path="/restaurant" element={<RestaurantPanel />} />
       </Routes>
     </Router>
   );
