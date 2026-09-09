@@ -50,18 +50,39 @@
     </div>
 
     <script>
-        let cartCount = 0;
+                let cartCount = 0;
+        
         function addToCart() {
             cartCount++;
             document.getElementById('cartFooter').style.display = 'block';
             document.getElementById('cartText').innerText = cartCount + " Item(s) Added";
         }
 
-        function placeOrder() {
-            alert("Order sent to Kitchen! (This will connect to our backend soon)");
-            cartCount = 0;
-            document.getElementById('cartFooter').style.display = 'none';
+        async function placeOrder() {
+            // নিচে আপনার Render-এর লাইভ লিংকটা বসাবেন
+            const backendUrl = "https://khaloindiapos-backend-1.onrender.com/place-order"; 
+            
+            try {
+                let response = await fetch(backendUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        table: "Table 1", 
+                        items: cartCount,
+                        total_amount: cartCount * 199 
+                    })
+                });
+                
+                let result = await response.json();
+                alert("Order sent to Kitchen successfully!");
+                
+                cartCount = 0;
+                document.getElementById('cartFooter').style.display = 'none';
+            } catch (error) {
+                alert("Error connecting to server! Check connection.");
+            }
         }
+        
     </script>
 
 </body>
