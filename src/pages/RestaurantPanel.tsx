@@ -8,24 +8,55 @@ interface Order {
   status: 'new' | 'preparing' | 'served';
 }
 
+interface Table {
+  id: number;
+  name: string;
+  status: 'free' | 'occupied' | 'billing';
+}
+
+interface MenuItem {
+  id: number;
+  name: string;
+  price: number;
+  available: boolean;
+}
+
 export default function RestaurantPanel() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // রিফ্রেশ করলে যেন লগ-আউট না হয়, তার জন্য localStorage চেক করা হচ্ছে
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("khalo_logged_in") === "true";
+  });
+
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
-  
-  // কানবান বোর্ডের ৩টি কলামের স্টেট
+  const [activeTab, setActiveTab] = useState<'orders' | 'tables' | 'menu'>('orders');
+
+  // কানবান বোর্ডের স্টেট
   const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<Order[]>([]);
   const [servedOrders, setServedOrders] = useState<Order[]>([]);
 
-  // WebSockets কানেকশন (লাইভ অর্ডারের জন্য)
+  // টেবিল ম্যানেজমেন্ট স্টেট
+  const [tables, setTables] = useState<Table[]>([
+    { id: 1, name: 'Table 1', status: 'free' },
+    { id: 2, name: 'Table 2', status: 'occupied' },
+    { id: 3, name: 'Table 3', status: 'billing' },
+    { id: 4, name: 'Table 4', status: 'free' },
+  ]);
+
+  // মেনু বিল্ডার স্টেট (টগল সুইচ অন/অফ)
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([
+    { id: 1, name: 'Special Chicken Biryani', price: 199, available: true },
+    { id: 2, name: 'Desi Cold Coffee', price: 89, available: true },
+  ]);
+
+  // WebSockets কানেকশন
   useEffect(() => {
     if (!isLoggedIn) return;
 
     const ws = new WebSocket("wss://khaloindiapos-backend-1.onrender.com/ws/cashier");
 
     ws.onmessage = (event) => {
-      // সার্ভার থেকে আসা ডেটা পার্স করে নতুন অর্ডার অবজেক্ট বানানো
       const newOrder: Order = {
         id: Date.now().toString(),
         table: "Table 1",
@@ -36,7 +67,6 @@ export default function RestaurantPanel() {
 
       setNewOrders((prev) => [newOrder, ...prev]);
 
-      // নতুন অর্ডার এলে "টিং!" সাউন্ড বাজানোর জন্য ব্রাউজার অ্যালার্ট বা সাউন্ড ট্রিগার
       if ('speechSynthesis' in window) {
         const speech = new SpeechSynthesisUtterance("New Order Received");
         window.speechSynthesis.speak(speech);
@@ -52,24 +82,51 @@ export default function RestaurantPanel() {
     e.preventDefault();
     if (mobile && password) {
       setIsLoggedIn(true);
+      localStorage.setItem("khalo_logged_in", "true"); // ব্রাউজারে সেভ করে রাখা হলো
     }
   };
 
-  // অর্ডার Accept করার ফাংশন (New -> Preparing)
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem("khalo_logged_in");
+  };
+
   const moveToPreparing = (order: Order) => {
     setNewOrders((prev) => prev.filter((o) => o.id !== order.id));
     setPreparingOrders((prev) => [...prev, { ...order, status: 'preparing' }]);
   };
 
-  // অর্ডার Reject করার ফাংশন
   const rejectOrder = (orderId: string) => {
     setNewOrders((prev) => prev.filter((o) => o.id !== orderId));
   };
 
-  // অর্ডার Served করার ফাংশন (Preparing -> Served)
   const moveToServed = (order: Order) => {
     setPreparingOrders((prev) => prev.filter((o) => o.id !== order.id));
     setServedOrders((prev) => [...prev, { ...order, status: 'served' }]);
+  };
+
+  // টেবিল স্ট্যাটাস বদলানোর ফাংশন (ମାଜିକ ଭିଉ)
+  const cycleTableStatus = (id: number) => {
+    setTables(tables.map(t => {
+      if (t.id === id) {
+        let nextStatus: 'free' | 'occupied' | 'billing' = 'free';
+        if (t.status === 'free') nextStatus = 'occupied';
+        else if (t.status === 'occupied') nextStatus = 'billing';
+        else if (t.status === 'billing') nextStatus = 'free';
+        return { ...t, status: nextStatus };
+      }
+      return t;
+    }));
+  };
+
+  // মেনু টগল সুইচ (On/Off)
+  const toggleMenuAvailability = (id: number) => {
+    setMenuItems(menuItems.map(item => {
+      if (item.id === id) {
+        return { ...item, available: !item.available };
+      }
+      return item;
+    }));
   };
 
   if (!isLoggedIn) {
@@ -109,56 +166,114 @@ export default function RestaurantPanel() {
     );
   }
 
-  // ৩ কলামের কানবান বোর্ড লেআউট (টেবলেট/ল্যাপটপ ভিউ)
   return (
     <div style={{ fontFamily: 'Segoe UI', backgroundColor: '#e9ecef', minHeight: '100vh', margin: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ backgroundColor: '#212529', color: 'white', padding: '15px 25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: '20px' }}>Khalo India - Live Kitchen & Cashier Dashboard</h2>
-        <button onClick={() => setIsLoggedIn(false)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
-      </div>
-
-      <div style={{ display: 'flex', flex: 1, padding: '20px', gap: '20px', overflowX: 'auto' }}>
+      
+      {/* টপ ন্যাভবার ও ট্যাব সুইচিং */}
+      <div style={{ backgroundColor: '#212529', color: 'white', padding: '15px 25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 style={{ margin: 0, fontSize: '18px' }}>Khalo India - Cashier Dashboard</h2>
         
-        {/* কলাম ১: New Orders */}
-        <div style={{ flex: 1, backgroundColor: '#fff3cd', borderRadius: '8px', padding: '15px', minWidth: '300px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ color: '#856404', borderBottom: '2px solid #ffeeba', paddingBottom: '10px', marginTop: 0 }}>New Orders ({newOrders.length})</h3>
-          {newOrders.map((order) => (
-            <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #dc3545', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#333' }}>{order.table}</h4>
-              <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => moveToPreparing(order)} style={{ flex: 1, backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>Accept</button>
-                <button onClick={() => rejectOrder(order.id)} style={{ flex: 1, backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>Reject</button>
-              </div>
-            </div>
-          ))}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setActiveTab('orders')} style={{ backgroundColor: activeTab === 'orders' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Live Orders</button>
+          <button onClick={() => setActiveTab('tables')} style={{ backgroundColor: activeTab === 'tables' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Table Management</button>
+          <button onClick={() => setActiveTab('menu')} style={{ backgroundColor: activeTab === 'menu' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Menu Stock Toggle</button>
         </div>
 
-        {/* কলাম ২: Preparing */}
-        <div style={{ flex: 1, backgroundColor: '#cce5ff', borderRadius: '8px', padding: '15px', minWidth: '300px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ color: '#004085', borderBottom: '2px solid #b8daff', paddingBottom: '10px', marginTop: 0 }}>Preparing ({preparingOrders.length})</h3>
-          {preparingOrders.map((order) => (
-            <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #ffc107', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#333' }}>{order.table}</h4>
-              <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
-              <button onClick={() => moveToServed(order)} style={{ width: '100%', backgroundColor: '#17a2b8', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>Mark as Ready / Served</button>
-            </div>
-          ))}
-        </div>
-
-        {/* কলাম ৩: Served */}
-        <div style={{ flex: 1, backgroundColor: '#d4edda', borderRadius: '8px', padding: '15px', minWidth: '300px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ color: '#155724', borderBottom: '2px solid #c3e6cb', paddingBottom: '10px', marginTop: 0 }}>Served ({servedOrders.length})</h3>
-          {servedOrders.map((order) => (
-            <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #28a745', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#333' }}>{order.table}</h4>
-              <p style={{ margin: '0 0 5px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
-              <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12px' }}>Completed</span>
-            </div>
-          ))}
-        </div>
-
+        <button onClick={handleLogout} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
       </div>
+
+      {/* ট্যাব ১: লাইভ অর্ডার কানবান বোর্ড */}
+      {activeTab === 'orders' && (
+        <div style={{ display: 'flex', flex: 1, padding: '20px', gap: '20px', overflowX: 'auto' }}>
+          <div style={{ flex: 1, backgroundColor: '#fff3cd', borderRadius: '8px', padding: '15px', minWidth: '280px' }}>
+            <h3 style={{ color: '#856404', marginTop: 0 }}>New Orders ({newOrders.length})</h3>
+            {newOrders.map((order) => (
+              <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #dc3545', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{order.table}</h4>
+                <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => moveToPreparing(order)} style={{ flex: 1, backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Accept</button>
+                  <button onClick={() => rejectOrder(order.id)} style={{ flex: 1, backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Reject</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ flex: 1, backgroundColor: '#cce5ff', borderRadius: '8px', padding: '15px', minWidth: '280px' }}>
+            <h3 style={{ color: '#004085', marginTop: 0 }}>Preparing ({preparingOrders.length})</h3>
+            {preparingOrders.map((order) => (
+              <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #ffc107', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{order.table}</h4>
+                <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
+                <button onClick={() => moveToServed(order)} style={{ width: '100%', backgroundColor: '#17a2b8', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Mark Ready</button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ flex: 1, backgroundColor: '#d4edda', borderRadius: '8px', padding: '15px', minWidth: '280px' }}>
+            <h3 style={{ color: '#155724', marginTop: 0 }}>Served ({servedOrders.length})</h3>
+            {servedOrders.map((order) => (
+              <div key={order.id} style={{ backgroundColor: 'white', borderLeft: '6px solid #28a745', padding: '15px', marginBottom: '15px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{order.table}</h4>
+                <p style={{ margin: '0 0 5px 0', color: '#666', fontSize: '14px' }}>{order.items}</p>
+                <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12px' }}>Completed</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ট্যাব ২: টেবিল ম্যানেজমেন্ট (ম্যাজিক ভিউ) */}
+      {activeTab === 'tables' && (
+        <div style={{ padding: '30px', maxWidth: '900px', margin: 'auto', width: '100%', boxSizing: 'border-box' }}>
+          <h3>Restaurant Table Status (Click to update)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            {tables.map(table => {
+              let bg = '#28a745'; // সবুজ (Free)
+              let label = 'Available / Free';
+              if (table.status === 'occupied') { bg = '#dc3545'; label = 'Ordered / Eating'; }
+              if (table.status === 'billing') { bg = '#ffc107'; label = 'Bill Requested'; }
+
+              return (
+                <div 
+                  key={table.id} 
+                  onClick={() => cycleTableStatus(table.id)}
+                  style={{ backgroundColor: bg, color: table.status === 'billing' ? '#000' : '#fff', padding: '25px', borderRadius: '10px', textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                >
+                  <h2 style={{ margin: '0 0 10px 0' }}>{table.name}</h2>
+                  <p style={{ margin: 0, fontSize: '14px' }}>{label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ট্যাব ৩: মেনু স্টক টগল সুইচ */}
+      {activeTab === 'menu' && (
+        <div style={{ padding: '30px', maxWidth: '800px', margin: 'auto', width: '100%', boxSizing: 'border-box' }}>
+          <h3>Menu Stock Control (Out of Stock Toggle)</h3>
+          <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginTop: '20px' }}>
+            {menuItems.map(item => (
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 5px 0' }}>{item.name}</h4>
+                  <span style={{ color: '#666' }}>Rs. {item.price}</span>
+                </div>
+                <div>
+                  <button 
+                    onClick={() => toggleMenuAvailability(item.id)}
+                    style={{ backgroundColor: item.available ? '#28a745' : '#dc3545', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    {item.available ? 'In Stock (ON)' : 'Out of Stock (OFF)'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
