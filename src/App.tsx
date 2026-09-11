@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RestaurantPanel from './pages/RestaurantPanel';
+import CustomerMenu from './pages/CustomerMenu';
 
 const LandingPage = () => (
   <div style={{ textAlign: 'center', marginTop: '100px', fontFamily: 'Segoe UI' }}>
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/restaurant" element={<RestaurantPanel />} />
+        <Route path="/menu" element={<CustomerMenu />} />
       </Routes>
     </Router>
   );
