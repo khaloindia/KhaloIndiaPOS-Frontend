@@ -9,11 +9,20 @@ interface Restaurant {
   expiryDate: string;
 }
 
+interface CustomerLead {
+  id: number;
+  restaurantName: string;
+  customerName: string;
+  customerPhone: string;
+  visitDate: string;
+  totalBill: number;
+}
+
 export default function SuperAdmin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'restaurants' | 'subscriptions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'restaurants' | 'subscriptions' | 'crm'>('overview');
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([
     { id: 1, name: 'Biryani House', owner: 'Rahul Sen', phone: '9830000000', tables: 5, expiryDate: '2026-09-15' },
@@ -23,6 +32,14 @@ export default function SuperAdmin() {
   const [newOwner, setNewOwner] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newTables, setNewTables] = useState('');
+
+  // ডামি লিড ডাটা (CRM / Data Export এর জন্য)
+  const [leads] = useState<CustomerLead[]>([
+    { id: 1, restaurantName: 'Biryani House', customerName: 'Sourav Ganguly', customerPhone: '9830111222', visitDate: '2026-09-10', totalBill: 650 },
+    { id: 2, restaurantName: 'Biryani House', customerName: 'Priyanka Bose', customerPhone: '9830333444', visitDate: '2026-09-11', totalBill: 420 },
+    { id: 3, restaurantName: 'Kolkata Fast Food', customerName: 'Arijit Singh', customerPhone: '9830555666', visitDate: '2026-09-11', totalBill: 310 }
+  ]);
+  const [selectedRestFilter, setSelectedRestFilter] = useState('All');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +65,26 @@ export default function SuperAdmin() {
       setNewPhone('');
       setNewTables('');
     }
+  };
+
+  // এক্সেল/সিএসভি ডাউনলোড করার ফাংশন
+  const downloadCSV = () => {
+    const filteredLeads = selectedRestFilter === 'All' 
+      ? leads 
+      : leads.filter(l => l.restaurantName === selectedRestFilter);
+
+    let csvContent = "data:text/csv;charset=utf-8,Restaurant,Customer Name,Phone,Visit Date,Bill Amount\n";
+    filteredLeads.forEach(l => {
+      csvContent += `"${l.restaurantName}","${l.customerName}","${l.customerPhone}","${l.visitDate}",${l.totalBill}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `KhaloIndia_Leads_${selectedRestFilter}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!isLoggedIn) {
@@ -92,10 +129,11 @@ export default function SuperAdmin() {
       <div style={{ backgroundColor: '#1e1e1e', color: 'white', padding: '20px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <h2 style={{ margin: 0, fontSize: '20px', color: '#ff5722' }}>Super Admin Dashboard</h2>
         
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => setActiveTab('overview')} style={{ backgroundColor: activeTab === 'overview' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Overview</button>
-          <button onClick={() => setActiveTab('restaurants')} style={{ backgroundColor: activeTab === 'restaurants' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Onboarding & QR</button>
-          <button onClick={() => setActiveTab('subscriptions')} style={{ backgroundColor: activeTab === 'subscriptions' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Subscriptions</button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={() => setActiveTab('overview')} style={{ backgroundColor: activeTab === 'overview' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Overview</button>
+          <button onClick={() => setActiveTab('restaurants')} style={{ backgroundColor: activeTab === 'restaurants' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Onboarding & QR</button>
+          <button onClick={() => setActiveTab('subscriptions')} style={{ backgroundColor: activeTab === 'subscriptions' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Subscriptions</button>
+          <button onClick={() => setActiveTab('crm')} style={{ backgroundColor: activeTab === 'crm' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Data Export & CRM</button>
         </div>
 
         <button onClick={() => setIsLoggedIn(false)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
@@ -202,6 +240,63 @@ export default function SuperAdmin() {
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'crm' && (
+          <div>
+            <h3>Customer Data Export & Lead Generation</h3>
+            <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginTop: '20px' }}>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Select Restaurant</label>
+                  <select 
+                    value={selectedRestFilter} 
+                    onChange={(e) => setSelectedRestFilter(e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  >
+                    <option value="All">All Restaurants</option>
+                    {restaurants.map(r => (
+                      <option key={r.id} value={r.name}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <button 
+                    onClick={downloadCSV}
+                    style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '11px 20px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    Download Excel / CSV
+                  </button>
+                </div>
+              </div>
+
+              <h4>Recent Customer Leads Preview</h4>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f1f1f1', textAlign: 'left' }}>
+                      <th style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>Restaurant</th>
+                      <th style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>Customer Name</th>
+                      <th style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>Phone Number</th>
+                      <th style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>Visit Date</th>
+                      <th style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>Bill Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(selectedRestFilter === 'All' ? leads : leads.filter(l => l.restaurantName === selectedRestFilter)).map(l => (
+                      <tr key={l.id}>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{l.restaurantName}</td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{l.customerName}</td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{l.customerPhone}</td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{l.visitDate}</td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>Rs. {l.totalBill}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
