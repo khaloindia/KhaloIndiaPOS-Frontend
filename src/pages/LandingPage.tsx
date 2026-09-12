@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'formidable' // safe import or standard react state
+import { useState } from 'react';
 
 export default function LandingPage() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', city: '', restaurant: '' });
