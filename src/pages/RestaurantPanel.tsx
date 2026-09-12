@@ -22,35 +22,30 @@ interface MenuItem {
 }
 
 export default function RestaurantPanel() {
-  // রিফ্রেশ করলে যেন লগ-আউট না হয়, তার জন্য localStorage চেক করা হচ্ছে
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("khalo_logged_in") === "true";
   });
 
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'orders' | 'tables' | 'menu'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'tables' | 'menu' | 'qr'>('orders');
 
-  // কানবান বোর্ডের স্টেট
   const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<Order[]>([]);
   const [servedOrders, setServedOrders] = useState<Order[]>([]);
 
-  // টেবিল ম্যানেজমেন্ট স্টেট
   const [tables, setTables] = useState<Table[]>([
     { id: 1, name: 'Table 1', status: 'free' },
-    { id: 2, name: 'Table 2', status: 'occupied' },
-    { id: 3, name: 'Table 3', status: 'billing' },
+    { id: 2, name: 'Table 2', status: 'free' },
+    { id: 3, name: 'Table 3', status: 'free' },
     { id: 4, name: 'Table 4', status: 'free' },
   ]);
 
-  // মেনু বিল্ডার স্টেট (টগল সুইচ অন/অফ)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     { id: 1, name: 'Special Chicken Biryani', price: 199, available: true },
     { id: 2, name: 'Desi Cold Coffee', price: 89, available: true },
   ]);
 
-  // WebSockets কানেকশন
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -82,7 +77,7 @@ export default function RestaurantPanel() {
     e.preventDefault();
     if (mobile && password) {
       setIsLoggedIn(true);
-      localStorage.setItem("khalo_logged_in", "true"); // ব্রাউজারে সেভ করে রাখা হলো
+      localStorage.setItem("khalo_logged_in", "true");
     }
   };
 
@@ -105,7 +100,6 @@ export default function RestaurantPanel() {
     setServedOrders((prev) => [...prev, { ...order, status: 'served' }]);
   };
 
-  // টেবিল স্ট্যাটাস বদলানোর ফাংশন (ମାଜିକ ଭିଉ)
   const cycleTableStatus = (id: number) => {
     setTables(tables.map(t => {
       if (t.id === id) {
@@ -119,7 +113,6 @@ export default function RestaurantPanel() {
     }));
   };
 
-  // মেনু টগল সুইচ (On/Off)
   const toggleMenuAvailability = (id: number) => {
     setMenuItems(menuItems.map(item => {
       if (item.id === id) {
@@ -169,20 +162,19 @@ export default function RestaurantPanel() {
   return (
     <div style={{ fontFamily: 'Segoe UI', backgroundColor: '#e9ecef', minHeight: '100vh', margin: 0, display: 'flex', flexDirection: 'column' }}>
       
-      {/* টপ ন্যাভবার ও ট্যাব সুইচিং */}
       <div style={{ backgroundColor: '#212529', color: 'white', padding: '15px 25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <h2 style={{ margin: 0, fontSize: '18px' }}>Khalo India - Cashier Dashboard</h2>
         
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => setActiveTab('orders')} style={{ backgroundColor: activeTab === 'orders' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Live Orders</button>
           <button onClick={() => setActiveTab('tables')} style={{ backgroundColor: activeTab === 'tables' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Table Management</button>
-          <button onClick={() => setActiveTab('menu')} style={{ backgroundColor: activeTab === 'menu' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Menu Stock Toggle</button>
+          <button onClick={() => setActiveTab('menu')} style={{ backgroundColor: activeTab === 'menu' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Stock Toggle</button>
+          <button onClick={() => setActiveTab('qr')} style={{ backgroundColor: activeTab === 'qr' ? '#ff5722' : '#495057', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Table QR Codes</button>
         </div>
 
         <button onClick={handleLogout} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
       </div>
 
-      {/* ট্যাব ১: লাইভ অর্ডার কানবান বোর্ড */}
       {activeTab === 'orders' && (
         <div style={{ display: 'flex', flex: 1, padding: '20px', gap: '20px', overflowX: 'auto' }}>
           <div style={{ flex: 1, backgroundColor: '#fff3cd', borderRadius: '8px', padding: '15px', minWidth: '280px' }}>
@@ -223,13 +215,12 @@ export default function RestaurantPanel() {
         </div>
       )}
 
-      {/* ট্যাব ২: টেবিল ম্যানেজমেন্ট (ম্যাজিক ভিউ) */}
       {activeTab === 'tables' && (
         <div style={{ padding: '30px', maxWidth: '900px', margin: 'auto', width: '100%', boxSizing: 'border-box' }}>
-          <h3>Restaurant Table Status (Click to update)</h3>
+          <h3>Restaurant Table Status</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {tables.map(table => {
-              let bg = '#28a745'; // সবুজ (Free)
+              let bg = '#28a745';
               let label = 'Available / Free';
               if (table.status === 'occupied') { bg = '#dc3545'; label = 'Ordered / Eating'; }
               if (table.status === 'billing') { bg = '#ffc107'; label = 'Bill Requested'; }
@@ -249,10 +240,9 @@ export default function RestaurantPanel() {
         </div>
       )}
 
-      {/* ট্যাব ৩: মেনু স্টক টগল সুইচ */}
       {activeTab === 'menu' && (
         <div style={{ padding: '30px', maxWidth: '800px', margin: 'auto', width: '100%', boxSizing: 'border-box' }}>
-          <h3>Menu Stock Control (Out of Stock Toggle)</h3>
+          <h3>Menu Stock Control</h3>
           <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginTop: '20px' }}>
             {menuItems.map(item => (
               <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #eee' }}>
@@ -274,6 +264,28 @@ export default function RestaurantPanel() {
         </div>
       )}
 
+      {/* নতুন ট্যাব ৪: টেবিল কিউআর কোড জেনারেটর */}
+      {activeTab === 'qr' && (
+        <div style={{ padding: '30px', maxWidth: '900px', margin: 'auto', width: '100%', boxSizing: 'border-box' }}>
+          <h3>Table QR Codes (Scan to open table menu)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            {tables.map(table => {
+              const menuUrl = `https://khalo-india-pos-frontend.vercel.app/menu?table=${table.name}`;
+              const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(menuUrl)}`;
+
+              return (
+                <div key={table.id} style={{ background: 'white', padding: '20px', borderRadius: '10px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                  <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>{table.name}</h3>
+                  <img src={qrApiUrl} alt={`QR Code for ${table.name}`} style={{ width: '150px', height: '150px', border: '1px solid #ddd', padding: '5px', borderRadius: '5px' }} />
+                  <p style={{ margin: '15px 0 0 0', fontSize: '12px', color: '#666', wordBreak: 'break-all' }}>{menuUrl}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
