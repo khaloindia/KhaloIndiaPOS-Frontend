@@ -6,16 +6,18 @@ interface Restaurant {
   owner: string;
   phone: string;
   tables: number;
+  expiryDate: string;
 }
 
 export default function SuperAdmin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'restaurants' | 'subscriptions'>('overview');
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([
-    { id: 1, name: 'Biryani House', owner: 'Rahul Sen', phone: '9830000000', tables: 5 },
-    { id: 2, name: 'Kolkata Fast Food', owner: 'Amit Roy', phone: '9831111111', tables: 4 }
+    { id: 1, name: 'Biryani House', owner: 'Rahul Sen', phone: '9830000000', tables: 5, expiryDate: '2026-09-15' },
+    { id: 2, name: 'Kolkata Fast Food', owner: 'Amit Roy', phone: '9831111111', tables: 4, expiryDate: '2026-09-10' }
   ]);
   const [newRestName, setNewRestName] = useState('');
   const [newOwner, setNewOwner] = useState('');
@@ -37,7 +39,8 @@ export default function SuperAdmin() {
         name: newRestName,
         owner: newOwner,
         phone: newPhone,
-        tables: parseInt(newTables)
+        tables: parseInt(newTables),
+        expiryDate: '2026-10-01'
       };
       setRestaurants([...restaurants, newEntry]);
       setNewRestName('');
@@ -86,83 +89,124 @@ export default function SuperAdmin() {
 
   return (
     <div style={{ fontFamily: 'Segoe UI', backgroundColor: '#f8f9fa', minHeight: '100vh', margin: 0 }}>
-      <div style={{ backgroundColor: '#1e1e1e', color: 'white', padding: '20px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ backgroundColor: '#1e1e1e', color: 'white', padding: '20px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <h2 style={{ margin: 0, fontSize: '20px', color: '#ff5722' }}>Super Admin Dashboard</h2>
+        
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setActiveTab('overview')} style={{ backgroundColor: activeTab === 'overview' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Overview</button>
+          <button onClick={() => setActiveTab('restaurants')} style={{ backgroundColor: activeTab === 'restaurants' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Onboarding & QR</button>
+          <button onClick={() => setActiveTab('subscriptions')} style={{ backgroundColor: activeTab === 'subscriptions' ? '#ff5722' : '#333', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Subscriptions</button>
+        </div>
+
         <button onClick={() => setIsLoggedIn(false)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
       </div>
 
       <div style={{ padding: '30px', maxWidth: '1000px', margin: 'auto' }}>
-        <h3>Overview</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px', marginBottom: '40px' }}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #ff5722' }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Total Restaurants</h4>
-            <h2 style={{ margin: 0, color: '#333' }}>{restaurants.length}</h2>
-          </div>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #28a745' }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Monthly SaaS Income</h4>
-            <h2 style={{ margin: 0, color: '#333' }}>Rs. {restaurants.length * 3000}</h2>
-          </div>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #17a2b8' }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Today's Total Orders</h4>
-            <h2 style={{ margin: 0, color: '#333' }}>148</h2>
-          </div>
-        </div>
-
-        <h3>Restaurant Onboarding</h3>
-        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
-          <form onSubmit={handleAddRestaurant} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-            <input 
-              type="text" 
-              placeholder="Restaurant Name" 
-              value={newRestName} 
-              onChange={(e) => setNewRestName(e.target.value)} 
-              required 
-              style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            />
-            <input 
-              type="text" 
-              placeholder="Owner Name" 
-              value={newOwner} 
-              onChange={(e) => setNewOwner(e.target.value)} 
-              required 
-              style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            />
-            <input 
-              type="text" 
-              placeholder="Mobile Number" 
-              value={newPhone} 
-              onChange={(e) => setNewPhone(e.target.value)} 
-              required 
-              style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            />
-            <input 
-              type="number" 
-              placeholder="Total Tables" 
-              value={newTables} 
-              onChange={(e) => setNewTables(e.target.value)} 
-              required 
-              style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            />
-            <button type="submit" style={{ backgroundColor: '#ff5722', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', gridColumn: '1 / -1' }}>
-              Add New Restaurant
-            </button>
-          </form>
-        </div>
-
-        <h3>Active Restaurants List</h3>
-        <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-          {restaurants.map((r) => (
-            <div key={r.id} style={{ padding: '15px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>{r.name}</h4>
-                <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Owner: {r.owner} | Phone: {r.phone} | Tables: {r.tables}</p>
+        
+        {activeTab === 'overview' && (
+          <div>
+            <h3>System Overview</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #ff5722' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Total Restaurants</h4>
+                <h2 style={{ margin: 0, color: '#333' }}>{restaurants.length}</h2>
               </div>
-              <span style={{ backgroundColor: '#28a745', color: 'white', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>Active</span>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #28a745' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Monthly SaaS Income</h4>
+                <h2 style={{ margin: 0, color: '#333' }}>Rs. {restaurants.length * 3000}</h2>
+              </div>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #17a2b8' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#666' }}>Today's Total Orders</h4>
+                <h2 style={{ margin: 0, color: '#333' }}>148</h2>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {activeTab === 'restaurants' && (
+          <div>
+            <h3>Restaurant Onboarding</h3>
+            <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
+              <form onSubmit={handleAddRestaurant} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Restaurant Name" 
+                  value={newRestName} 
+                  onChange={(e) => setNewRestName(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                />
+                <input 
+                  type="text" 
+                  placeholder="Owner Name" 
+                  value={newOwner} 
+                  onChange={(e) => setNewOwner(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                />
+                <input 
+                  type="text" 
+                  placeholder="Mobile Number" 
+                  value={newPhone} 
+                  onChange={(e) => setNewPhone(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                />
+                <input 
+                  type="number" 
+                  placeholder="Total Tables" 
+                  value={newTables} 
+                  onChange={(e) => setNewTables(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                />
+                <button type="submit" style={{ backgroundColor: '#ff5722', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', gridColumn: '1 / -1' }}>
+                  Add New Restaurant
+                </button>
+              </form>
+            </div>
+
+            <h3>Active Restaurants & Table QR Codes</h3>
+            {restaurants.map((r) => (
+              <div key={r.id} style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#ff5722' }}>{r.name} (Owner: {r.owner})</h4>
+                <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
+                  {Array.from({ length: r.tables }, (_, i) => i + 1).map((tableNum) => {
+                    const menuUrl = `https://khalo-india-pos-frontend.vercel.app/menu?table=Table ${tableNum}`;
+                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(menuUrl)}`;
+                    return (
+                      <div key={tableNum} style={{ border: '1px solid #eee', padding: '10px', borderRadius: '5px', textAlign: 'center', minWidth: '120px' }}>
+                        <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', fontSize: '12px' }}>Table {tableNum}</p>
+                        <img src={qrApiUrl} alt={`QR Table ${tableNum}`} style={{ width: '100px', height: '100px' }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'subscriptions' && (
+          <div>
+            <h3>Subscription Billing Tracker</h3>
+            <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', marginTop: '20px' }}>
+              {restaurants.map((r) => (
+                <div key={r.id} style={{ padding: '15px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>{r.name}</h4>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Phone: {r.phone} | Expiry Date: {r.expiryDate}</p>
+                  </div>
+                  <span style={{ backgroundColor: '#dc3545', color: 'white', padding: '5px 12px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>
+                    Payment Due Soon
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
-                  
